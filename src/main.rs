@@ -21,6 +21,7 @@ struct Cli {
     #[arg(long)]
     wineprefix: Option<String>,
 
+    /// Command to execute. Example: `wine game.exe`
     #[arg(required = true, trailing_var_arg = true)]
     command: Vec<String>,
 }
