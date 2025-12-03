@@ -26,30 +26,24 @@ pub async fn execute_command(
         let proton_runners = find_proton_dirs();
         let wine_runners = find_wine_binaries();
 
-        // Determine if we should prefer Proton
-        let use_proton =
-            wrapper && game_info.game_type != GameType::StarRail && !proton_runners.is_empty();
-
-        let mut candidates: Vec<(PathBuf, RunnerType)> = if use_proton {
-            proton_runners
-                .iter()
-                .map(|r| (r.path.clone(), r.runner_type.clone()))
-                .collect()
-        } else {
+        let candidates: Vec<(PathBuf, RunnerType)> = if game_info.game_type == GameType::StarRail {
             wine_runners
                 .iter()
                 .map(|r| (r.path.clone(), r.runner_type.clone()))
                 .collect()
-        };
-
-        // Add wine runners if we're not using umu-run or if proton wasn't available
-        if !use_proton {
-            candidates.extend(
-                proton_runners
+        } else {
+            let mut all_candidates = proton_runners
+                .iter()
+                .map(|r| (r.path.clone(), r.runner_type.clone()))
+                .collect::<Vec<_>>();
+            all_candidates.extend(
+                wine_runners
                     .iter()
                     .map(|r| (r.path.clone(), r.runner_type.clone())),
             );
-        }
+            all_candidates
+        };
+
         let mut selected: Option<PathBuf> = config
             .saved_runner_for_exe(&game_info.game_exe)
             .and_then(|s| {
