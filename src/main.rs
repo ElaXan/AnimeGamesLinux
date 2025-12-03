@@ -32,7 +32,7 @@ struct Cli {
     #[arg(long, help = "Set proxy port (overrides config)")]
     proxy_port: Option<String>,
 
-    /// Command to execute. Example: `wine game.exe`
+    /// Command to execute. Example: `/path/to/game.exe`
     #[arg(required = true, trailing_var_arg = true)]
     command: Vec<String>,
 }
