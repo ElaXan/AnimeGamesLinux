@@ -8,7 +8,6 @@ mod utils;
 
 use clap::Parser;
 use proxy::{create_proxy, set_proxy_addr};
-use std::env;
 
 #[derive(clap::Parser, Debug)]
 #[command(name = "anime-games-ps-linux")]
@@ -20,6 +19,18 @@ struct Cli {
     /// Set WINEPREFIX or you can set it via environment variable WINEPREFIX
     #[arg(long)]
     wineprefix: Option<String>,
+
+    #[arg(long, help = "Set server address (overrides config)")]
+    server: Option<String>,
+
+    #[arg(long, help = "Set server port (overrides config)")]
+    server_port: Option<String>,
+
+    #[arg(long, help = "Use SSL for server connection (overrides config)")]
+    use_ssl: bool,
+
+    #[arg(long, help = "Set proxy port (overrides config)")]
+    proxy_port: Option<String>,
 
     /// Command to execute. Example: `wine game.exe`
     #[arg(required = true, trailing_var_arg = true)]
@@ -44,22 +55,17 @@ async fn main() {
 
     let args: Vec<String> = cli.command;
 
-    if args.is_empty() {
-        eprintln!(
-            "Usage: {} <command> [args...]",
-            std::env::args().next().unwrap()
-        );
-        eprintln!("example: {} wine game.exe", env::args().next().unwrap());
-        std::process::exit(1);
-    }
-
     println!("Anime Games PS Linux Wrapper");
     println!("========================\n");
 
     let config = config::Config::load().unwrap_or_default();
 
-    let proxy_port: String =
-        std::env::var("PROXY_PORT").unwrap_or_else(|_| config.proxy_port.clone());
+    let proxy_port: String = std::env::var("PROXY_PORT").unwrap_or_else(|_| {
+        cli.proxy_port
+            .clone()
+            .or_else(|| Some(config.proxy_port.clone()))
+            .unwrap_or_else(|| "8080".to_string())
+    });
 
     let game_info = detect_game(&args);
 
@@ -73,11 +79,15 @@ async fn main() {
         })
         .unwrap_or(("127.0.0.1".to_string(), 80, false));
 
-    let server: String = std::env::var("SERVER").unwrap_or(cfg_server);
-    let server_port: String = std::env::var("SERVER_PORT").unwrap_or(cfg_server_port.to_string());
-    let use_ssl: bool = std::env::var("USE_SSL")
-        .map(|_| true)
-        .unwrap_or(cfg_use_ssl);
+    let server: String = std::env::var("SERVER")
+        .ok()
+        .or_else(|| cli.server.clone())
+        .unwrap_or(cfg_server);
+    let server_port: String = std::env::var("SERVER_PORT")
+        .ok()
+        .or_else(|| cli.server_port.clone())
+        .unwrap_or(cfg_server_port.to_string());
+    let use_ssl: bool = std::env::var_os("USE_SSL").is_some() || cli.use_ssl || cfg_use_ssl;
 
     let server_addr = format!(
         "{}://{}:{}",
