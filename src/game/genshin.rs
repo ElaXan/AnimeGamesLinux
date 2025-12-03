@@ -218,7 +218,22 @@ impl GenshinPatcher {
             )));
         }
 
-        fs::copy(&target_patch, &backup_patch)?;
+        let target_metadata = fs::metadata(&target_patch)?;
+        let source_metadata = fs::metadata(&source_path)?;
+
+        if source_metadata.len() >= target_metadata.len() {
+            tracing::info!("Game is already patched or patch is not needed.");
+            self.patched = true;
+            return Ok(());
+        }
+
+        if !backup_patch.exists() {
+            fs::copy(&target_patch, &backup_patch)?;
+            tracing::info!(
+                "Backup of original patch created at: {}",
+                backup_patch.display()
+            );
+        }
 
         tracing::info!("Applying patch...");
         fs::copy(source_path, &target_patch)?;
