@@ -10,7 +10,7 @@ use clap::Parser;
 use proxy::{create_proxy, set_proxy_addr};
 
 #[derive(clap::Parser, Debug)]
-#[command(name = "anime-games-ps-linux")]
+#[command(name = "anime-games-ps-linux", version)]
 struct Cli {
     /// Run as wrapper only
     #[arg(short, long)]
