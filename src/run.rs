@@ -79,7 +79,7 @@ pub async fn execute_command(
         }
         if let Some(runner_dir) = &selected {
             // Only use umu-run if we have a Proton runner
-            if wrapper && selected_runner_type == Some(RunnerType::Proton) {
+            if selected_runner_type == Some(RunnerType::Proton) {
                 if !umu_run.is_installed() {
                     tracing::info!("umu-run not found. Installing...");
                     umu_run
@@ -101,6 +101,7 @@ pub async fn execute_command(
                     "Using Wine/direct execution for command: {}",
                     final_args.join(" ")
                 );
+                final_args.insert(0, runner_dir.to_string_lossy().to_string());
             }
 
             // Determine and set WINEPREFIX: prefer configured per-game wineprefix,
